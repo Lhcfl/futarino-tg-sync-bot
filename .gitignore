@@ -1,0 +1,9 @@
+node_modules/
+pnpm-lock.yaml
+# 构建产物
+dist/
+docs/
+data/
+.tsbuildinfo
+config.yml
+*.log

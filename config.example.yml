@@ -1,0 +1,9 @@
+telegram:
+  GroupId: -123456789
+  postBotToken: AAAAAAAAAA:ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+  syncBotToken: AAAAAAAAAA:ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+discourse:
+  url: https://discourse.example
+  channelId: 3
+  Api-Username: TelegramBot
+  Api-Key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
