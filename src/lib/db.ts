@@ -58,7 +58,10 @@ class DB {
         );
       } catch (err) {
         this.plan(`init-db-${dbName}`, 1, () => this.safeWriteDB(dbName));
-        return false;
+        return {
+          map: {},
+          keys: [],
+        };
       }
     }
   }
@@ -124,11 +127,12 @@ class DB {
       get swpPath() {
         return `${this.dir}/${dbName}.swp.json`;
       },
-      data: this.safeReadDB(dbName) || {
+      data: {
         map: {},
         keys: [],
-      },
+      }
     };
+    this._storage[dbName] = this.safeReadDB(dbName);
 
     const context = {
       this: this,
