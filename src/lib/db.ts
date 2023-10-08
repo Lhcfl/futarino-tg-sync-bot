@@ -170,6 +170,10 @@ class DB {
       get: function (db, key: string): T {
         return db[key] as T;
       },
+      deleteProperty: function(db, key: string) {
+        delete db[key];
+        return true;
+      }
     }) as {
       [key in DBKey]: T;
     };
