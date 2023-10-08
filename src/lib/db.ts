@@ -132,7 +132,7 @@ class DB {
         keys: [],
       }
     };
-    this._storage[dbName] = this.safeReadDB(dbName);
+    this._storage[dbName].data = this.safeReadDB(dbName);
 
     const context = {
       this: this,
