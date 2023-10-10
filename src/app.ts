@@ -11,6 +11,7 @@ import { Config } from "@/types/config";
 import TgCooked from "@/lib/tgcooked";
 import { Post, Topic } from "node-discourse-api/lib/types/discourse";
 import DB from "./lib/db";
+import plain2html from "./lib/plain2html";
 
 // load config
 const config: Config = yaml.load(
@@ -35,6 +36,24 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
     format: "pem",
   },
 });
+
+function errString(err: unknown) {
+  if (typeof err === "object") {
+    if (err && "status" in err && "statusText" in err && "body" in err) {
+      let str = `${err.status} ${err.statusText}`;
+      if (typeof err.body === "object" && err.body && "errors" in err.body) {
+        if (Array.isArray(err.body.errors)) {
+          str += `: ${err.body.errors.join(";")}`;
+        } else {
+          str += `: ${JSON.stringify(err.body.errors)}`;
+        }
+      } else {
+        return str;
+      }
+    }
+  }
+  return JSON.stringify(err);
+}
 
 discourse.webhook.app.get("/login", (req, res) => {
   if (req.query.payload) {
@@ -242,7 +261,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
       caption = TgCooked(body.message.cooked, { strip_emoji: false }).trim();
     } else {
       caption =
-        `<b>${body.message.user.username}</b>:\n` +
+        `<b>${plain2html(body.message.user.username)}</b>:\n` +
         TgCooked(body.message.cooked, { strip_emoji: false }).trim();
       hasTitleFutaMessageId[body.message.id] = true;
     }
@@ -295,7 +314,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
     } else {
       if (getTgMessageIdByFuta[body.message.id]) {
         syncbot.editMessageText(
-          `<b>${body.message.user.username} in ${body.channel.title} </b>\n` +
+          `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
             TgCooked(body.message.cooked, { strip_emoji: false }).trim(),
           {
             chat_id: config.telegram.GroupId,
@@ -307,7 +326,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
         syncbot
           .sendMessage(
             config.telegram.GroupId,
-            `<b>${body.message.user.username} in ${body.channel.title} </b>\n` +
+            `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
               TgCooked(body.message.cooked, { strip_emoji: false }).trim(),
             {
               parse_mode: "HTML",
@@ -354,7 +373,7 @@ discourse.webhook.on("post", (body, res) => {
   const tgckd = TgCooked(cooked);
 
   cooked =
-    `<b>${body.username} 在 <a href="${config.discourse.url}/t/-/${body.topic_id}/${body.post_number}">${body.topic_title}</a> 中发帖：</b>\n` +
+    `<b>${plain2html(body.username)} 在 <a href="${config.discourse.url}/t/-/${body.topic_id}/${body.post_number}">${plain2html(body.topic_title)}</a> 中发帖：</b>\n` +
     tgckd;
 
   if (!getTgMessageIdByFutaPostId[body.id]) {
@@ -559,7 +578,7 @@ async function handleTgMessage(msg: Message) {
           arround_post_number: "last"
         });
 
-        msg_to_send += `<a href="${config.discourse.url}/t/-/${topic.id}">${topic.title}</a> 的最新帖子：\n-------------\n`;
+        msg_to_send += `<a href="${config.discourse.url}/t/-/${topic.id}">${plain2html(topic.title)}</a> 的最新帖子：\n-------------\n`;
         const posts =
           topic?.post_stream?.posts && topic?.post_stream?.posts.slice(-3);
 
@@ -567,7 +586,7 @@ async function handleTgMessage(msg: Message) {
           msg_to_send += posts
             .map(
               (p: Post) =>
-                `<b>${p.username}</b>：\n${TgCooked(p.cooked).trim()}`,
+                `<b>${plain2html(p.username)}</b>：\n${TgCooked(p.cooked).trim()}`,
             )
             .join("\n------------\n");
         }
@@ -636,7 +655,7 @@ async function handleTgMessage(msg: Message) {
             getForwardedFutaPostIdByTgMessageId[msg.message_id] = res.id;
           })
           .catch((err) => {
-            bot.sendMessage(chatId, `发生了错误： ${JSON.stringify(err)}`, {
+            bot.sendMessage(chatId, errString(err), {
               reply_to_message_id: msg.message_id,
             });
           });
@@ -660,7 +679,7 @@ async function handleTgMessage(msg: Message) {
       }
     }
   } catch (err) {
-    bot.sendMessage(chatId, "500 Error. " + JSON.stringify(err));
+    bot.sendMessage(chatId, errString(err));
     console.error(err);
   }
 }
@@ -809,7 +828,7 @@ syncbot.on("message", async (msg) => {
       hasTitleTgMessageId[msg.message_id] = msgres?.message_id;
     }
   } catch (err) {
-    syncbot.sendMessage(chatId, `500 Error: ${JSON.stringify(err)}`);
+    syncbot.sendMessage(chatId, errString(err));
   }
 });
 
@@ -874,7 +893,7 @@ bot.onText(/\/login/, (msg) => {
           "请点击该链接授权bot登录你的futarino账户……\n" + u.url,
         );
       } catch (err) {
-        bot.sendMessage(chatId, `500 Error: ${JSON.stringify(err)}`);
+        bot.sendMessage(chatId, errString(err));
       }
     } else {
       if (getJoinRequestByUserChatId[msg.chat.id]) {
