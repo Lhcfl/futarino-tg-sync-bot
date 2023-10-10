@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "node-discourse-api": "^0.0.8",
+    "node-discourse-api": "^0.0.10",
     "node-telegram-bot-api": "^0.63.0"
   },
   "devDependencies": {

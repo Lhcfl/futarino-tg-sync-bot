@@ -1816,10 +1816,10 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-discourse-api@^0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/node-discourse-api/-/node-discourse-api-0.0.8.tgz#46d714d34a9fec7e3bc9efa5f96a6a3466fe52c7"
-  integrity sha512-qqL48SyKQL8ImnIJgnHk+ZVGrJ/HeGyuAfJpgKqu9ypGdQ8okv8TM1wHjqr+65iNyVZh/a2bLZuWTyxASXtRTg==
+node-discourse-api@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/node-discourse-api/-/node-discourse-api-0.0.10.tgz#ccab2932b6f62498b7cab556850814b2ff692c20"
+  integrity sha512-0AWppmfV0CWSYpQXDa+DKXyrPAWNUZlVgnsDxoufNRLZVC3uwR9kLf76vp1nQ1PqKlRWBWlIFiLTGh4lzJWfKg==
   dependencies:
     "@types/express-serve-static-core" "^4.17.37"
     eventemitter3 "^5.0.1"
