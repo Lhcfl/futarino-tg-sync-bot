@@ -229,6 +229,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
       /<aside class="onebox[^>]*?data-onebox-src="([^"]+)"[^>]*>[\s\S]+?<\/aside>/g,
       "",
     );
+    b_cooked = b_cooked.replaceAll(/<img src="\/images\/emoji[^>]*?/g, "");
 
     let urls: readonly InputMedia[] = (b_cooked.match(/<img src="([^"]+)"/g) || []).map((url) => {
       if (url.startsWith("/")) url = config.discourse.url + url;
@@ -258,11 +259,11 @@ discourse.webhook.on("chat_message", async (body, res) => {
       !body.message.in_reply_to &&
       !hasTitleFutaMessageId[body.message.id]
     ) {
-      caption = TgCooked(body.message.cooked, { strip_emoji: false }).trim();
+      caption = TgCooked(body.message.cooked).trim();
     } else {
       caption =
         `<b>${plain2html(body.message.user.username)}</b>:\n` +
-        TgCooked(body.message.cooked, { strip_emoji: false }).trim();
+        TgCooked(body.message.cooked).trim();
       hasTitleFutaMessageId[body.message.id] = true;
     }
 
@@ -315,7 +316,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
       if (getTgMessageIdByFuta[body.message.id]) {
         syncbot.editMessageText(
           `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
-            TgCooked(body.message.cooked, { strip_emoji: false }).trim(),
+            TgCooked(body.message.cooked).trim(),
           {
             chat_id: config.telegram.GroupId,
             message_id: getTgMessageIdByFuta[body.message.id],
@@ -327,7 +328,7 @@ discourse.webhook.on("chat_message", async (body, res) => {
           .sendMessage(
             config.telegram.GroupId,
             `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
-              TgCooked(body.message.cooked, { strip_emoji: false }).trim(),
+              TgCooked(body.message.cooked).trim(),
             {
               parse_mode: "HTML",
               reply_to_message_id:

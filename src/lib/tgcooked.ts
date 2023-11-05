@@ -1865,10 +1865,8 @@ export default function TgCooked(
     "%l%tg-spoiler%r%$1%l%/tg-spoiler%r%",
   );
 
-  if (config.strip_emoji) {
-    cooked = replaceEmoji(cooked);
-    cooked = cooked.replaceAll(/<img src="\/images\/emoji[^>]*>/g, "[emoji]");
-  }
+  cooked = replaceEmoji(cooked);
+  cooked = cooked.replaceAll(/<img src="\/images\/emoji[^>]*>/g, "[emoji]");
 
   cooked = cooked.replaceAll(
     /<img src="https:\/\/api.telegram.org[^>]*>/g,
