@@ -1786,7 +1786,7 @@ const emojiList = {
 function replaceEmoji(cooked: string) {
   cooked = cooked.replaceAll(
     /<img src="\/images\/emoji\/[^\/]+\/([^.]+)[^>]*>/g,
-    (emojiName) => {
+    (_, emojiName) => {
       const emojiMap: {
         [key in string]?: string;
       } = emojiList;
