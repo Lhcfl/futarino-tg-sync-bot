@@ -110,12 +110,12 @@ const bot = new TelegramBot(config.telegram.postBotToken, {
 });
 
 // The bot to sync chat
-const syncbot = new TelegramBot(config.telegram.syncBotToken, {
-  polling: {
-    interval: 2000,
-  },
-  // webhook: true,
-});
+// const syncbot = new TelegramBot(config.telegram.syncBotToken, {
+//   polling: {
+//     interval: 2000,
+//   },
+//   // webhook: true,
+// });
 
 const botSettings = {
   hideSenderUsernameAutomately: true,
@@ -139,15 +139,15 @@ const getForwardedFutaPostIdByTgMessageId = db.defineDataBase<number>(
   "getForwardedFutaPostIdByTgMessageId",
 );
 
-const hasTitleTgMessageId = db.defineDataBase<boolean>("hasTitleTgMessageId");
+// const hasTitleTgMessageId = db.defineDataBase<boolean>("hasTitleTgMessageId");
 
-const hasTitleFutaMessageId = db.defineDataBase<boolean>(
-  "hasTitleFutaMessageId",
-);
+// const hasTitleFutaMessageId = db.defineDataBase<boolean>(
+//   "hasTitleFutaMessageId",
+// );
 
-const getFutaMessageIdByTg = db.defineDataBase<number>("getFutaMessageIdByTg");
+// const getFutaMessageIdByTg = db.defineDataBase<number>("getFutaMessageIdByTg");
 
-const getTgMessageIdByFuta = db.defineDataBase<number>("getTgMessageIdByFuta");
+// const getTgMessageIdByFuta = db.defineDataBase<number>("getTgMessageIdByFuta");
 
 const getFutaApiKeyByTgSenderId = db.defineDataBase<string>(
   "getFutaApiKeyByTgSenderId",
@@ -169,11 +169,11 @@ const getJoinRequestByUserChatId = db.defineDataBase<ChatJoinRequest>(
   "getJoinRequestByUserChatId",
 );
 
-const message_ids_not_need_sync_to_tg = db.defineDataBase<boolean>(
-  "message_ids_not_need_sync_to_tg",
-);
+// const message_ids_not_need_sync_to_tg = db.defineDataBase<boolean>(
+//   "message_ids_not_need_sync_to_tg",
+// );
 
-let lastreply: string | number = "";
+// let lastreply: string | number = "";
 
 function normalUrl(url: string) {
   if (url.startsWith("/")) url = config.discourse.url + url;
@@ -190,171 +190,171 @@ function getDiscourseApi(uid: number) {
   }
 }
 
-discourse.webhook.on("chat_message", async (body, res) => {
-  if (body.message.user.username === "FutaTelegramBot") {
-    res.json({ text: "200 ok", ec: 200 });
-    return;
-  }
+// discourse.webhook.on("chat_message", async (body, res) => {
+//   if (body.message.user.username === "FutaTelegramBot") {
+//     res.json({ text: "200 ok", ec: 200 });
+//     return;
+//   }
 
-  if (!botSettings.sync) {
-    res.json({ text: "200 ok", ec: 200 });
-    return;
-  }
+//   if (!botSettings.sync) {
+//     res.json({ text: "200 ok", ec: 200 });
+//     return;
+//   }
 
-  if (body.channel.slug === "authened") {
-    // await to load message_ids_not_need_sync_to_tg
-    await new Promise((res) => setTimeout(() => res(null), 100));
+//   if (body.channel.slug === "authened") {
+//     // await to load message_ids_not_need_sync_to_tg
+//     await new Promise((res) => setTimeout(() => res(null), 100));
 
-    if (message_ids_not_need_sync_to_tg[body.message.id]) {
-      console.log("这条消息不需要转发");
-      delete message_ids_not_need_sync_to_tg[body.message.id];
-      res.json({ text: "200 ok", ec: 200 });
-      return;
-    }
+//     if (message_ids_not_need_sync_to_tg[body.message.id]) {
+//       console.log("这条消息不需要转发");
+//       delete message_ids_not_need_sync_to_tg[body.message.id];
+//       res.json({ text: "200 ok", ec: 200 });
+//       return;
+//     }
 
-    if (body.message.deleted_at) {
-      if (getTgMessageIdByFuta[body.message.id]) {
-        syncbot.deleteMessage(
-          config.telegram.GroupId,
-          getTgMessageIdByFuta[body.message.id],
-        );
-      }
-      res.json({ text: "200 ok", ec: 200 });
-      return;
-    }
+//     if (body.message.deleted_at) {
+//       if (getTgMessageIdByFuta[body.message.id]) {
+//         syncbot.deleteMessage(
+//           config.telegram.GroupId,
+//           getTgMessageIdByFuta[body.message.id],
+//         );
+//       }
+//       res.json({ text: "200 ok", ec: 200 });
+//       return;
+//     }
 
-    let b_cooked = body.message.cooked;
+//     let b_cooked = body.message.cooked;
 
-    b_cooked = b_cooked.replaceAll(
-      /<aside class="onebox[^>]*?data-onebox-src="([^"]+)"[^>]*>[\s\S]+?<\/aside>/g,
-      "",
-    );
-    b_cooked = b_cooked.replaceAll(/<img src="\/images\/emoji[^>]*?/g, "");
+//     b_cooked = b_cooked.replaceAll(
+//       /<aside class="onebox[^>]*?data-onebox-src="([^"]+)"[^>]*>[\s\S]+?<\/aside>/g,
+//       "",
+//     );
+//     b_cooked = b_cooked.replaceAll(/<img src="\/images\/emoji[^>]*?/g, "");
 
-    let urls: readonly InputMedia[] = (b_cooked.match(/<img src="([^"]+)"/g) || []).map((url) => {
-      if (url.startsWith("/")) url = config.discourse.url + url;
-      return {
-        type: "photo",
-        media: url,
-      };
-    });
+//     let urls: readonly InputMedia[] = (b_cooked.match(/<img src="([^"]+)"/g) || []).map((url) => {
+//       if (url.startsWith("/")) url = config.discourse.url + url;
+//       return {
+//         type: "photo",
+//         media: url,
+//       };
+//     });
 
-    if (body.message.uploads) {
-      urls = urls.concat(
-        body.message.uploads.map((upload: { url: string }) => {
-          const url = normalUrl(upload.url);
+//     if (body.message.uploads) {
+//       urls = urls.concat(
+//         body.message.uploads.map((upload: { url: string }) => {
+//           const url = normalUrl(upload.url);
 
-          console.log("检测到文件：" + url);
-          return {
-            type: "photo",
-            media: url,
-          };
-        }),
-      );
-    }
+//           console.log("检测到文件：" + url);
+//           return {
+//             type: "photo",
+//             media: url,
+//           };
+//         }),
+//       );
+//     }
 
-    let caption;
-    if (
-      body.message.user.username === lastreply &&
-      !body.message.in_reply_to &&
-      !hasTitleFutaMessageId[body.message.id]
-    ) {
-      caption = TgCooked(body.message.cooked).trim();
-    } else {
-      caption =
-        `<b>${plain2html(body.message.user.username)}</b>:\n` +
-        TgCooked(body.message.cooked).trim();
-      hasTitleFutaMessageId[body.message.id] = true;
-    }
+//     let caption;
+//     if (
+//       body.message.user.username === lastreply &&
+//       !body.message.in_reply_to &&
+//       !hasTitleFutaMessageId[body.message.id]
+//     ) {
+//       caption = TgCooked(body.message.cooked).trim();
+//     } else {
+//       caption =
+//         `<b>${plain2html(body.message.user.username)}</b>:\n` +
+//         TgCooked(body.message.cooked).trim();
+//       hasTitleFutaMessageId[body.message.id] = true;
+//     }
 
-    lastreply = body.message.user.username;
+//     lastreply = body.message.user.username;
 
-    if (urls.length == 0) {
-      if (getTgMessageIdByFuta[body.message.id]) {
-        syncbot.editMessageText(caption, {
-          chat_id: config.telegram.GroupId,
-          message_id: getTgMessageIdByFuta[body.message.id],
-          parse_mode: "HTML",
-        });
-      } else {
-        syncbot
-          .sendMessage(config.telegram.GroupId, caption, {
-            parse_mode: "HTML",
-            reply_to_message_id:
-              body.message.in_reply_to &&
-              getTgMessageIdByFuta[body.message.in_reply_to.id],
-          })
-          .then((res) => {
-            // console.log(res);
-            getTgMessageIdByFuta[body.message.id] = res.message_id;
-            getFutaMessageIdByTg[res.message_id] = body.message.id;
-          });
-      }
-    } else if (urls.length == 1) {
-      if (getTgMessageIdByFuta[body.message.id]) {
-        syncbot.editMessageCaption(caption, {
-          chat_id: config.telegram.GroupId,
-          message_id: getTgMessageIdByFuta[body.message.id],
-          parse_mode: "HTML",
-        });
-      } else {
-        syncbot
-          .sendPhoto(config.telegram.GroupId, urls[0].media, {
-            caption,
-            parse_mode: "HTML",
-            reply_to_message_id:
-              body.message.in_reply_to &&
-              getTgMessageIdByFuta[body.message.in_reply_to.id],
-          })
-          .then((res) => {
-            // console.log(res);
-            getTgMessageIdByFuta[body.message.id] = res.message_id;
-            getFutaMessageIdByTg[res.message_id] = body.message.id;
-          });
-      }
-    } else {
-      if (getTgMessageIdByFuta[body.message.id]) {
-        syncbot.editMessageText(
-          `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
-            TgCooked(body.message.cooked).trim(),
-          {
-            chat_id: config.telegram.GroupId,
-            message_id: getTgMessageIdByFuta[body.message.id],
-            parse_mode: "HTML",
-          },
-        );
-      } else {
-        syncbot
-          .sendMessage(
-            config.telegram.GroupId,
-            `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
-              TgCooked(body.message.cooked).trim(),
-            {
-              parse_mode: "HTML",
-              reply_to_message_id:
-                body.message.in_reply_to &&
-                getTgMessageIdByFuta[body.message.in_reply_to.id],
-            },
-          )
-          .then((res) => {
-            // console.log(res);
-            getTgMessageIdByFuta[body.message.id] = res.message_id;
-            getFutaMessageIdByTg[res.message_id] = body.message.id;
-          });
-        for (let i = 0; i < urls.length; i += 10) {
-          syncbot
-            .sendMediaGroup(config.telegram.GroupId, urls.slice(i, i + 10))
-            .then((res) => {
-              // console.log(res);
-              getFutaMessageIdByTg[res.message_id] = body.message.id;
-            });
-        }
-      }
-    }
-  }
+//     if (urls.length == 0) {
+//       if (getTgMessageIdByFuta[body.message.id]) {
+//         syncbot.editMessageText(caption, {
+//           chat_id: config.telegram.GroupId,
+//           message_id: getTgMessageIdByFuta[body.message.id],
+//           parse_mode: "HTML",
+//         });
+//       } else {
+//         syncbot
+//           .sendMessage(config.telegram.GroupId, caption, {
+//             parse_mode: "HTML",
+//             reply_to_message_id:
+//               body.message.in_reply_to &&
+//               getTgMessageIdByFuta[body.message.in_reply_to.id],
+//           })
+//           .then((res) => {
+//             // console.log(res);
+//             getTgMessageIdByFuta[body.message.id] = res.message_id;
+//             getFutaMessageIdByTg[res.message_id] = body.message.id;
+//           });
+//       }
+//     } else if (urls.length == 1) {
+//       if (getTgMessageIdByFuta[body.message.id]) {
+//         syncbot.editMessageCaption(caption, {
+//           chat_id: config.telegram.GroupId,
+//           message_id: getTgMessageIdByFuta[body.message.id],
+//           parse_mode: "HTML",
+//         });
+//       } else {
+//         syncbot
+//           .sendPhoto(config.telegram.GroupId, urls[0].media, {
+//             caption,
+//             parse_mode: "HTML",
+//             reply_to_message_id:
+//               body.message.in_reply_to &&
+//               getTgMessageIdByFuta[body.message.in_reply_to.id],
+//           })
+//           .then((res) => {
+//             // console.log(res);
+//             getTgMessageIdByFuta[body.message.id] = res.message_id;
+//             getFutaMessageIdByTg[res.message_id] = body.message.id;
+//           });
+//       }
+//     } else {
+//       if (getTgMessageIdByFuta[body.message.id]) {
+//         syncbot.editMessageText(
+//           `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
+//             TgCooked(body.message.cooked).trim(),
+//           {
+//             chat_id: config.telegram.GroupId,
+//             message_id: getTgMessageIdByFuta[body.message.id],
+//             parse_mode: "HTML",
+//           },
+//         );
+//       } else {
+//         syncbot
+//           .sendMessage(
+//             config.telegram.GroupId,
+//             `<b>${plain2html(body.message.user.username)} in ${plain2html(body.channel.title)} </b>\n` +
+//               TgCooked(body.message.cooked).trim(),
+//             {
+//               parse_mode: "HTML",
+//               reply_to_message_id:
+//                 body.message.in_reply_to &&
+//                 getTgMessageIdByFuta[body.message.in_reply_to.id],
+//             },
+//           )
+//           .then((res) => {
+//             // console.log(res);
+//             getTgMessageIdByFuta[body.message.id] = res.message_id;
+//             getFutaMessageIdByTg[res.message_id] = body.message.id;
+//           });
+//         for (let i = 0; i < urls.length; i += 10) {
+//           syncbot
+//             .sendMediaGroup(config.telegram.GroupId, urls.slice(i, i + 10))
+//             .then((res) => {
+//               // console.log(res);
+//               getFutaMessageIdByTg[res.message_id] = body.message.id;
+//             });
+//         }
+//       }
+//     }
+//   }
 
-  res.json({ text: "200 ok", ec: 200 });
-});
+//   res.json({ text: "200 ok", ec: 200 });
+// });
 
 discourse.webhook.on("post", (body, res) => {
   if (!botSettings.reply) {
@@ -575,7 +575,7 @@ async function handleTgMessage(msg: Message) {
       } else if (!matched[2]) {
         let msg_to_send = "";
 
-        const topic = await discourse.getTopicInfo(matched[1], {
+        const topic = await discourse.getTopic(matched[1], {
           arround_post_number: "last"
         });
 
@@ -687,151 +687,151 @@ async function handleTgMessage(msg: Message) {
 
 bot.on("message", handleTgMessage);
 
-syncbot.on("edited_message", async (msg) => {
-  const chatId = msg.chat.id;
-  console.log(msg);
-  if (!msg.from) return;
-  try {
-    if (getForwardedFutaPostIdByTgMessageId[msg.message_id]) {
-      await renderMsgText(msg, true);
-      if (!msg.text) {
-        bot.sendMessage(chatId, "检测不到正文。", {
-          reply_to_message_id: msg.message_id,
-        });
-        return;
-      }
-      const raw = getFutaApiKeyByTgSenderId[msg.from.id]
-        ? msg.text.trim()
-        : `**${
-          msg.from?.first_name || msg.from?.username
-        } 在 Telegram 中回复您：**\n${msg.text.trim()}`;
+// syncbot.on("edited_message", async (msg) => {
+//   const chatId = msg.chat.id;
+//   console.log(msg);
+//   if (!msg.from) return;
+//   try {
+//     if (getForwardedFutaPostIdByTgMessageId[msg.message_id]) {
+//       await renderMsgText(msg, true);
+//       if (!msg.text) {
+//         bot.sendMessage(chatId, "检测不到正文。", {
+//           reply_to_message_id: msg.message_id,
+//         });
+//         return;
+//       }
+//       const raw = getFutaApiKeyByTgSenderId[msg.from.id]
+//         ? msg.text.trim()
+//         : `**${
+//           msg.from?.first_name || msg.from?.username
+//         } 在 Telegram 中回复您：**\n${msg.text.trim()}`;
 
-      getDiscourseApi(msg.from.id)
-        .updatePost(getForwardedFutaPostIdByTgMessageId[msg.message_id], {
-          raw,
-        })
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          bot.sendMessage(
-            chatId,
-            `尝试编辑时发生了错误： ${JSON.stringify(err)}`,
-            {
-              reply_to_message_id: msg.message_id,
-            },
-          );
-        });
+//       getDiscourseApi(msg.from.id)
+//         .updatePost(getForwardedFutaPostIdByTgMessageId[msg.message_id], {
+//           raw,
+//         })
+//         .then((res) => {
+//           console.log(res);
+//         })
+//         .catch((err) => {
+//           bot.sendMessage(
+//             chatId,
+//             `尝试编辑时发生了错误： ${JSON.stringify(err)}`,
+//             {
+//               reply_to_message_id: msg.message_id,
+//             },
+//           );
+//         });
 
-      return;
-    }
-    if (getFutaMessageIdByTg[msg.message_id]) {
-      await renderMsgText(msg);
+//       return;
+//     }
+//     if (getFutaMessageIdByTg[msg.message_id]) {
+//       await renderMsgText(msg);
 
-      if (!msg.text) {
-        return;
-      }
-      let raw = msg.text;
+//       if (!msg.text) {
+//         return;
+//       }
+//       let raw = msg.text;
 
-      if (hasTitleTgMessageId[msg.message_id]) {
-        raw = `**${
-          msg.from?.first_name || msg.from?.username
-        } in Telegram ：**\n${msg.text}`;
-      }
+//       if (hasTitleTgMessageId[msg.message_id]) {
+//         raw = `**${
+//           msg.from?.first_name || msg.from?.username
+//         } in Telegram ：**\n${msg.text}`;
+//       }
 
-      const msgres = await getDiscourseApi(msg.from.id).chat.editMessage(
-        config.discourse.channelId,
-        getFutaMessageIdByTg[msg.message_id],
-        raw,
-      );
+//       const msgres = await getDiscourseApi(msg.from.id).chat.editMessage(
+//         config.discourse.channelId,
+//         getFutaMessageIdByTg[msg.message_id],
+//         raw,
+//       );
 
-      message_ids_not_need_sync_to_tg[msgres.message_id] = true;
-    }
-  } catch (err) {
-    console.log(err);
-  }
-});
+//       message_ids_not_need_sync_to_tg[msgres.message_id] = true;
+//     }
+//   } catch (err) {
+//     console.log(err);
+//   }
+// });
 
-syncbot.on("message", async (msg) => {
-  if (!msg.from) return;
-  if (!botSettings.sync) {
-    lastreply = -1;
-    return;
-  }
-  if (msg.text && msg.text.startsWith("/")) {
-    lastreply = -1;
-    return;
-  }
-  if (
-    msg?.reply_to_message?.from?.username !== "FutaSyncBot" &&
-    msg?.reply_to_message?.from?.is_bot
-  ) {
-    lastreply = -1;
-    return;
-  }
-  const chatId = msg.chat.id;
+// syncbot.on("message", async (msg) => {
+//   if (!msg.from) return;
+//   if (!botSettings.sync) {
+//     lastreply = -1;
+//     return;
+//   }
+//   if (msg.text && msg.text.startsWith("/")) {
+//     lastreply = -1;
+//     return;
+//   }
+//   if (
+//     msg?.reply_to_message?.from?.username !== "FutaSyncBot" &&
+//     msg?.reply_to_message?.from?.is_bot
+//   ) {
+//     lastreply = -1;
+//     return;
+//   }
+//   const chatId = msg.chat.id;
 
-  if (chatId != config.telegram.GroupId) {
-    console.log(`receiving ${chatId}, not ${config.telegram.GroupId}, return`);
-    return;
-  }
-  console.log(msg);
-  try {
-    const mid = msg.reply_to_message?.message_id;
+//   if (chatId != config.telegram.GroupId) {
+//     console.log(`receiving ${chatId}, not ${config.telegram.GroupId}, return`);
+//     return;
+//   }
+//   console.log(msg);
+//   try {
+//     const mid = msg.reply_to_message?.message_id;
 
-    await renderMsgText(msg);
+//     await renderMsgText(msg);
 
-    if (!msg.text) {
-      return;
-    }
+//     if (!msg.text) {
+//       return;
+//     }
 
-    let msgres;
-    let raw;
-    let hasTitle = false;
+//     let msgres;
+//     let raw;
+//     let hasTitle = false;
 
-    if (getFutaApiKeyByTgSenderId[msg.from?.id]) {
-      raw = msg.text;
-    } else if (lastreply === msg.from?.id && !msg.reply_to_message) {
-      raw = msg.text;
-    } else {
-      raw = `**${
-        msg.from?.first_name || msg.from?.username
-      } in Telegram ：**\n${msg.text}`;
-      hasTitle = true;
-    }
+//     if (getFutaApiKeyByTgSenderId[msg.from?.id]) {
+//       raw = msg.text;
+//     } else if (lastreply === msg.from?.id && !msg.reply_to_message) {
+//       raw = msg.text;
+//     } else {
+//       raw = `**${
+//         msg.from?.first_name || msg.from?.username
+//       } in Telegram ：**\n${msg.text}`;
+//       hasTitle = true;
+//     }
 
-    console.log(
-      `mid is ${mid} && getFutaMessageIdByTg[mid] is ${
-        mid && getFutaMessageIdByTg[mid]
-      }`,
-    );
+//     console.log(
+//       `mid is ${mid} && getFutaMessageIdByTg[mid] is ${
+//         mid && getFutaMessageIdByTg[mid]
+//       }`,
+//     );
 
-    if (getFutaApiKeyByTgSenderId[msg.from.id]) {
-      msgres = await getDiscourseApi(msg.from.id).chat.sendMessage(config.discourse.channelId, raw, {
-        in_reply_to_id: mid && getFutaMessageIdByTg[mid],
-      });
-      message_ids_not_need_sync_to_tg[msgres.message_id] = true;
-    } else {
-      msgres = await discourse.chat.sendMessage(config.discourse.channelId, raw, {
-        in_reply_to_id: mid && getFutaMessageIdByTg[mid],
-      });
-    }
+//     if (getFutaApiKeyByTgSenderId[msg.from.id]) {
+//       msgres = await getDiscourseApi(msg.from.id).chat.sendMessage(config.discourse.channelId, raw, {
+//         in_reply_to_id: mid && getFutaMessageIdByTg[mid],
+//       });
+//       message_ids_not_need_sync_to_tg[msgres.message_id] = true;
+//     } else {
+//       msgres = await discourse.chat.sendMessage(config.discourse.channelId, raw, {
+//         in_reply_to_id: mid && getFutaMessageIdByTg[mid],
+//       });
+//     }
 
-    lastreply = msg.from?.id;
+//     lastreply = msg.from?.id;
 
-    console.log("msgres: ");
-    console.log(msgres);
+//     console.log("msgres: ");
+//     console.log(msgres);
 
-    getFutaMessageIdByTg[msg.message_id] = msgres?.message_id;
-    getTgMessageIdByFuta[msgres?.message_id] = msg.message_id;
+//     getFutaMessageIdByTg[msg.message_id] = msgres?.message_id;
+//     getTgMessageIdByFuta[msgres?.message_id] = msg.message_id;
 
-    if (hasTitle) {
-      hasTitleTgMessageId[msg.message_id] = msgres?.message_id;
-    }
-  } catch (err) {
-    syncbot.sendMessage(chatId, errString(err));
-  }
-});
+//     if (hasTitle) {
+//       hasTitleTgMessageId[msg.message_id] = msgres?.message_id;
+//     }
+//   } catch (err) {
+//     syncbot.sendMessage(chatId, errString(err));
+//   }
+// });
 
 bot.on("chat_join_request", async (joinRequest) => {
   if (joinRequest.chat.id != config.telegram.GroupId) {
@@ -962,57 +962,57 @@ bot.onText(/\/toggle_push/, (msg) => {
   }
 });
 
-syncbot.onText(/\/toggle_sync/, (msg) => {
-  const chat = msg.chat;
-  botSettings.sync = !botSettings.sync;
-  syncbot.sendMessage(
-    chat.id,
-    `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
-  );
-});
-syncbot.onText(/\/sync_on/, (msg) => {
-  const chat = msg.chat;
-  botSettings.sync = true;
-  syncbot.sendMessage(
-    chat.id,
-    `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
-  );
-});
-syncbot.onText(/\/sync_off/, (msg) => {
-  const chat = msg.chat;
-  botSettings.sync = false;
-  syncbot.sendMessage(
-    chat.id,
-    `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
-  );
-});
+// syncbot.onText(/\/toggle_sync/, (msg) => {
+//   const chat = msg.chat;
+//   botSettings.sync = !botSettings.sync;
+//   syncbot.sendMessage(
+//     chat.id,
+//     `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
+//   );
+// });
+// syncbot.onText(/\/sync_on/, (msg) => {
+//   const chat = msg.chat;
+//   botSettings.sync = true;
+//   syncbot.sendMessage(
+//     chat.id,
+//     `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
+//   );
+// });
+// syncbot.onText(/\/sync_off/, (msg) => {
+//   const chat = msg.chat;
+//   botSettings.sync = false;
+//   syncbot.sendMessage(
+//     chat.id,
+//     `已${botSettings.sync ? "开启" : "关闭"}天空岛同步。`,
+//   );
+// });
 
-syncbot.onText(/\/is_sync/, (msg) => {
-  const chat = msg.chat;
-  syncbot.sendMessage(
-    chat.id,
-    `同步功能${botSettings.sync ? "开启" : "关闭"}中。`,
-  );
-});
+// syncbot.onText(/\/is_sync/, (msg) => {
+//   const chat = msg.chat;
+//   syncbot.sendMessage(
+//     chat.id,
+//     `同步功能${botSettings.sync ? "开启" : "关闭"}中。`,
+//   );
+// });
 
-syncbot.setMyCommands([
-  {
-    command: "toggle_sync",
-    description: "开关同步",
-  },
-  {
-    command: "sync_on",
-    description: "开同步",
-  },
-  {
-    command: "sync_off",
-    description: "关同步",
-  },
-  {
-    command: "is_sync",
-    description: "查询是否正在同步",
-  },
-]);
+// syncbot.setMyCommands([
+//   {
+//     command: "toggle_sync",
+//     description: "开关同步",
+//   },
+//   {
+//     command: "sync_on",
+//     description: "开同步",
+//   },
+//   {
+//     command: "sync_off",
+//     description: "关同步",
+//   },
+//   {
+//     command: "is_sync",
+//     description: "查询是否正在同步",
+//   },
+// ]);
 
 bot.setMyCommands([
   {
